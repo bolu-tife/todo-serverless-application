@@ -7,6 +7,8 @@ plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
   - serverless-plugin-tracing
+  - serverless-reqvalidator-plugin
+  - serverless-aws-documentation
 
 provider:
   name: aws
@@ -29,9 +31,9 @@ provider:
     SIGNED_URL_EXPIRATION: 300
     AUTH0_JWKS_URL : https://dev-4nkufhia8vwxlzgo.us.auth0.com/.well-known/jwks.json
 
-  # logs:
-  #   # Enable API Gateway logs
-  #   restApi: true
+  logs:
+    # Enable API Gateway logs
+    restApi: true
 
   iam:
     role:
@@ -41,7 +43,6 @@ provider:
             - xray:PutTelemetryRecords
             - xray:PutTraceSegments
           Resource: "*"
-
 
 functions:
 
@@ -57,7 +58,7 @@ functions:
           method: get
           path: todos
           cors: true
-          # authorizer: Auth
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -66,7 +67,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_USERID_INDEX}
 
      
 
@@ -81,7 +82,7 @@ functions:
           method: post
           path: todos
           cors: true
-          # authorizer: Auth
+          authorizer: Auth
           request:
             schemas:
               application/json: ${file(models/create-todo-model.json)}
@@ -100,16 +101,21 @@ functions:
           method: patch
           path: todos/{todoId}
           cors: true
-          # authorizer: Auth
-          request:
-            schemas:
-              application/json: ${file(models/update-todo-model.json)}
+          authorizer: Auth
+          # request:
+          #   schemas:
+          #     application/json: ${file(models/update-todo-model.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:GetItem
           - dynamodb:UpdateItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_USERID_INDEX}
+
 
   # TODO: Configure this function
   # Provide property for setting up CORS, Authorizer, iamRoleStatements
@@ -120,13 +126,18 @@ functions:
           method: delete
           path: todos/{todoId}
           cors: true
-          # authorizer: Auth
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:GetItem
           - dynamodb:DeleteItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_USERID_INDEX}
+
 
 
   # TODO: Configure this function
@@ -138,12 +149,23 @@ functions:
           method: post
           path: todos/{todoId}/attachment
           cors: true
-          # authorizer: Auth
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
-          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_USERID_INDEX}
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*
+
 
 resources:
   Resources:

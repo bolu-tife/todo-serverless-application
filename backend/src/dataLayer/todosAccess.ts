@@ -18,15 +18,18 @@ export class TodosAccess {
   ) {}
 
   async createTodo(todo: TodoItem): Promise<void> {
+    console.log("inside createDl", todo)
     await this.docClient
       .put({
         TableName: this.todosTable,
         Item: todo
       })
       .promise()
+    console.log("done creating inside dl")
   }
 
   async getAllTodosForUser(userId: string): Promise<TodoItem[]> {
+    console.log("inside getAll", userId)
     const result = await this.docClient
       .query({
         TableName: this.todosTable,
@@ -36,74 +39,84 @@ export class TodosAccess {
       })
       .promise()
 
+      console.log("done with getAll", result)
+
     return result.Items as TodoItem[]
   }
 
-  async getTodo(todoId: string): Promise<TodoItem> {
-    const result = await this.docClient
-      .get({
-        TableName: this.todosTable,
-        Key: { todoId }
-      })
-      .promise()
+  async getTodo(userId: string,todoId: string): Promise<TodoItem> {
+    console.log("inside getTodo datalayer")
+    console.log(userId)
+    const queryResult = await this.getAllTodosForUser(userId)
 
-    return result.Item as TodoItem
+    const result = queryResult.filter(todo  => todo.todoId === todoId)
+    console.log("done with getTodo", result)
+
+    return result[0] as TodoItem
   }
 
 
-  async deleteTodo(todoId: string, createdAt: string): Promise<void> {
+  async deleteTodo(todoId: string, userId: string): Promise<void> {
+    console.log("inside deleteTodo datalayer")
     await this.docClient
       .delete({
         TableName: this.todosTable,
         Key: {
-          todoId, // partition key
-          createdAt //sort key
+          userId, // partition key
+          todoId,   //sort key
+         
         }
       })
       .promise()
+      console.log("done with deleteTodo datalayer")
   }
 
   async updateTodo(
     todoId: string,
-    createdAt: string,
+    userId: string,
     todo: TodoUpdate
   ): Promise<void> {
     await this.docClient
       .update({
         TableName: this.todosTable,
         Key: {
-          todoId, // partition key
-          createdAt //sort key
+          userId, // partition key
+          todoId,   //sort key
         },
-        UpdateExpression: 'SET name = :name, dueDate =:dueDate, done =:done',
+        ExpressionAttributeNames: {
+          "#name": "name", 
+         },
         ExpressionAttributeValues: {
           ':name': todo.name,
           ':dueDate': todo.dueDate,
           ':done': todo.done
-        }
+        },
+        UpdateExpression: 'set #name = :name, dueDate =:dueDate, done =:done',
       })
       .promise()
   }
 
   async updateTodoAttachmentUrl(
     todoId: string,
-    createdAt: string,
+    userId: string,
     attachmentId: TodoUpdate
   ): Promise<void> {
+    console.log("inside updateTodoAttachmentUrl")
     const bucketName = process.env.ATTACHMENT_S3_BUCKET;
     await this.docClient
       .update({
         TableName: this.todosTable,
         Key: {
-          todoId, // partition key
-          createdAt //sort key
+          userId, // partition key
+          todoId,   //sort key
         },
-        UpdateExpression: 'SET attachmentUrl = :attachmentUrl',
         ExpressionAttributeValues: {
           ':attachmentUrl': `https://${bucketName}.s3.amazonaws.com/${attachmentId}`,
-        }
+        },
+        UpdateExpression: 'set attachmentUrl = :attachmentUrl',
       })
       .promise()
+    console.log("done with updateTodoAttachmentUrl")
   }
 
 }

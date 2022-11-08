@@ -6,24 +6,27 @@ import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 // import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
 import * as createError from 'http-errors'
-import { parseUserId } from '../auth/utils'
+// import { parseUserId } from '../auth/utils'
 
 // TODO: Implement businessLogic
 const todoAccess = new TodosAccess()
 const attachmentUtils = new AttachmentUtils()
 
-export async function getTodosForUser(jwtToken: string): Promise<TodoItem[]> {
-  const userId = parseUserId(jwtToken)
+export async function getTodosForUser(userId: string): Promise<TodoItem[]> {
+  // const userId = parseUserId(jwtToken)
   return await todoAccess.getAllTodosForUser(userId)
 }
 
 export async function createTodo(
-  jwtToken: string,
+  userId: string,
   createTodoRequest: CreateTodoRequest
 ): Promise<TodoItem> {
 
+  console.log("inside createTodoBL")
   const todoId = uuid.v4()
-  const userId = parseUserId(jwtToken)
+  console.log("todoId", todoId)
+  // const userId = parseUserId(jwtToken)
+  console.log("userId", userId)
 
   const newItem = {
     todoId,
@@ -32,56 +35,64 @@ export async function createTodo(
     done: false,
     createdAt: new Date().toISOString(),
   }
+  console.log("newItem", newItem)
   await todoAccess.createTodo(newItem)
+  console.log("ending of bl", newItem)
 
   return newItem
 }
 
 export async function updateTodo(
-  jwtToken: string,
+  userId: string,
   todoId: string,
   UpdateTodoRequest: UpdateTodoRequest
 ): Promise<void> {
-  const userId = parseUserId(jwtToken)
+  // const userId = parseUserId(jwtToken)
+  console.log('Inside UpdateToDOBL:')
 
-  const todo = await todoAccess.getTodo(todoId)
-  if (!todo) createError(404, 'Todo Does not exist')
-  if (todo.userId !== userId) createError(404, 'Todo Does not belong to user');
+  const todo = await todoAccess.getTodo(userId, todoId)
+  console.log('Inside UpdateToDOBL:')
+  if (!todo) createError(404, 'Todo Does not exist or belong to user')
+  // if (todo.userId !== userId) createError(404, 'Todo Does not belong to user');
 
   await todoAccess.updateTodo(
     todoId,
-    todo.createdAt,
+    userId,
     UpdateTodoRequest
   )
 }
 
 export async function deleteTodo(
-  jwtToken: string,
+  userId: string,
   todoId: string
 ): Promise<void> {
-  const userId = parseUserId(jwtToken)
-
-  const todo = await todoAccess.getTodo(todoId)
-  if (!todo) createError(404, 'Todo Does not exist')
-  if (todo.userId !== userId) createError(404, 'Todo Does not belong to user');
+  // const userId = parseUserId(jwtToken)
+  console.log("inside deleteTodo")
+  const todo = await todoAccess.getTodo(userId, todoId)
+  console.log("done with getTodo ", todo)
+  if (!todo) createError(404, 'Todo Does not exist or belong to user')
+  // if (todo.userId !== userId) createError(404, 'Todo Does not belong to user');
   
-  await todoAccess.deleteTodo(todoId, todo.createdAt)
+  await todoAccess.deleteTodo(todoId, userId)
 }
 
   export async function createAttachmentPresignedUrl(
-    jwtToken: string,
+    userId: string,
     todoId: string,
   ): Promise<string> {
-
-  const userId = parseUserId(jwtToken)
-  const todo = await todoAccess.getTodo(todoId)
+    console.log("inside createAttachmentPresignedUrl")
+  // const userId = parseUserId(jwtToken)
+  const todo = await todoAccess.getTodo(userId,todoId)
+  console.log("done with  get", todo)
   if (!todo) createError(404, 'Todo Does not exist');
 
-  if (todo.userId !== userId) createError(404, 'Todo Does not belong to user');
+  // if (todo.userId !== userId) createError(404, 'Todo Does not belong to user');
 
   const attachmentId = uuid.v4()
-  await todoAccess.updateTodoAttachmentUrl(  todoId, todo.createdAt, attachmentId)
-  
+  console.log("attachmentID", attachmentId)
+  await todoAccess.updateTodoAttachmentUrl(  todoId, userId, attachmentId)
+  console.log("done with update")
   const uploadUrl = attachmentUtils.getUploadUrl(attachmentId)
+  console.log("done with get url")
     return uploadUrl;
   }

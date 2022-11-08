@@ -13,14 +13,17 @@ export const handler = middy(
     try {
       console.log('Processing event: ', event)
 
-      const jwtToken = getUserId(event)
-      const todos = await getTodosForUser(jwtToken)
+      const userId = getUserId(event)
+      const todos = await getTodosForUser(userId)
+
+      console.log("result ",todos)
 
       return {
         statusCode: 200,
         headers: {
-          'Access-Control-Allow-Origin': '*'
-        },
+          "Access-Control-Allow-Origin" : "*", // Required for CORS support to work
+          "Access-Control-Allow-Credentials" : true // Required for cookies, authorization headers with HTTPS
+      },
         body: JSON.stringify({
           items: todos
         })
@@ -28,7 +31,13 @@ export const handler = middy(
     } catch (error) {
       return {
         statusCode: error.statusCode || 400,
-        body: error
+        body:JSON.stringify({
+          error
+        }),
+        headers: {
+          "Access-Control-Allow-Origin" : "*", // Required for CORS support to work
+          "Access-Control-Allow-Credentials" : true // Required for cookies, authorization headers with HTTPS
+      },
       }
     }
   }

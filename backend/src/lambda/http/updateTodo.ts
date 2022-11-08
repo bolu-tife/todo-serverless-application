@@ -7,26 +7,29 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import { updateTodo } from '../../businessLogic/todos'
 import { UpdateTodoRequest } from '../../requests/UpdateTodoRequest'
 import { getUserId } from '../utils'
+import { createLogger } from '../../utils/logger'
 
+
+const logger = createLogger('Update Todo')
 export const handler = 
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    console.log('Processing event: ', event)
     try {
+      logger.info('Processing event ', event)
+
       const todoId = event.pathParameters.todoId
-      console.log("todoId", todoId)
+      logger.info('TodoId', todoId)
+
       const updatedTodo: UpdateTodoRequest = JSON.parse(event.body)
-      console.log("updatedTodo", updatedTodo)
-      // DONE: Update a TODO item with the provided id using values in the "updatedTodo" object
+      logger.info('Update todo body', updatedTodo)
+
       const userId = getUserId(event)
-      console.log("userId", userId)
+      logger.info('UserId', userId)
+      
       await updateTodo(userId, todoId, updatedTodo) 
 
       return {
         statusCode: 200,
-        body: JSON.stringify({
-          message:"updated completed"
-          
-        }),
+        body: "",
         headers: {
           "Access-Control-Allow-Origin" : "*", // Required for CORS support to work
           "Access-Control-Allow-Credentials" : true // Required for cookies, authorization headers with HTTPS

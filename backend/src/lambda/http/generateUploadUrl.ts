@@ -6,16 +6,23 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
 import { createAttachmentPresignedUrl } from '../../businessLogic/todos'
 import { getUserId } from '../utils'
+import { createLogger } from '../../utils/logger'
 
+
+const logger = createLogger('Generate UploadUrl Todo')
 export const handler = 
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    console.log('Processing event: ', event)
     try{
+      logger.info('Processing event ', event)
 
       const todoId = event.pathParameters.todoId
-    // TODO: Return a presigned URL to upload a file for a TODO item with the provided id
+      logger.info('todoId', todoId)
+
     const userId = getUserId(event)
+    logger.info('UserId', userId)
+
     const url = await createAttachmentPresignedUrl(userId, todoId)
+    logger.info('uploadUrl', url)
 
     return {
       statusCode: 200,

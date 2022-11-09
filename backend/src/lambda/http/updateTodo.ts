@@ -20,6 +20,7 @@ export const handler =
       logger.info('TodoId', todoId)
 
       const updatedTodo: UpdateTodoRequest = JSON.parse(event.body)
+      updatedTodo.name = updatedTodo.name.trim()
       logger.info('Update todo body', updatedTodo)
 
       const userId = getUserId(event)

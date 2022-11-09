@@ -15,7 +15,9 @@ export const handler = middy(
       logger.info('Processing event ', event)
 
       const newTodo: CreateTodoRequest = JSON.parse(event.body)
+      newTodo.name  = newTodo.name.trim()
       logger.info('Create todo body', newTodo)
+
 
       const userId = getUserId(event)
       logger.info('UserId', userId)

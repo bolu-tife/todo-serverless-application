@@ -9,8 +9,25 @@ import { parseUserId } from "../auth/utils";
  */
 export function getUserId(event: APIGatewayProxyEvent): string {
   const authorization = event.headers.Authorization
-  const split = authorization.split(' ')
-  const jwtToken = split[1]
+  const jwtToken = getToken(authorization)
 
   return parseUserId(jwtToken)
+}
+
+/**
+ * Get a Jwt token from an auth header event
+ * @param authorization an authorization header from API Gateway  event
+ *
+ * @returns a JWT token  from authorization header
+ */
+export function getToken(authorization: string): string {
+  if (!authorization) throw new Error('No authentication header')
+
+  if (!authorization.toLowerCase().startsWith('bearer '))
+    throw new Error('Invalid authentication header')
+
+  const split = authorization.split(' ')
+  const token = split[1]
+
+  return token 
 }
